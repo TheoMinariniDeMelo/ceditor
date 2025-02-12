@@ -7,7 +7,6 @@
 int main(int argc, char** argv){
 	resize_handler(0);
 	signal(SIGWINCH, resize_handler);
-
 	if(strlen(argv[0]) == 0) return 1;
 	
 	char *file_name = argv[0];
@@ -21,5 +20,7 @@ int main(int argc, char** argv){
 	
 	if(fgets(buffer, BUFFER_SIZE, file) == NULL){
 		free(buffer);
+		return 1;
 	} 
+
 }

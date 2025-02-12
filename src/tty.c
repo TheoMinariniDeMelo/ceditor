@@ -12,4 +12,6 @@ void resize_handler(int sig){
 	}
 	max_line = ws.ws_row;  // Atualiza o número de linhas
 	max_col = ws.ws_col;   // Atualiza o número de colunas
+	
 }
+
