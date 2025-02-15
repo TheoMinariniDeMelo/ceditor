@@ -53,4 +53,6 @@ int save_buffer(FILE* file, char* buff, unsigned int buff_size, int absolute_pos
     fseek(file, position, SEEK_SET);
     return 0;  
 }
-
+FILE* create(char* uri){
+	return NULL;	
+}
