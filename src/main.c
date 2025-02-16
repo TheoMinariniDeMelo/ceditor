@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include "./terminal.h"
 #include "./terminal_config.h"
 
 void control(char ch) {
@@ -15,7 +14,7 @@ void control(char ch) {
 
 void print_mode(bool is_edit_mode) {
 	printf("\033[s");                  // Salva a posição do cursor
-	printf("\033[%d;1H", get_max_line()); // Move para a última linha
+	gotoxy(1,get_max_line()); // Move para a última linha
 	printf("\033[K");                  // Limpa a linha antes de escrever
 	printf(is_edit_mode ? "Edit Mode" : "Control Mode");
 	printf("\033[u");            // Restaura a posição original do cursor
@@ -25,7 +24,9 @@ void print_mode(bool is_edit_mode) {
 int main() {
 	resize_handler(0);
 	signal(SIGWINCH, resize_handler);
+	signal(SIGINT, clear_sig);
 	enable_raw_mode();
+	atexit_config();
 	system("clear");
 
 	char c;
@@ -55,7 +56,17 @@ int main() {
 				control_mode = !control_mode;
 				print_mode(control_mode);
 				continue;
-
+			case 0x08:
+				if(size == 1) continue;
+				str[size - 1] = '\0';
+				char *str_tm = realloc(str, size + 1);
+				if(!str_tm){
+					perror("realloc");
+					free(str);
+					exit(1);
+				}
+				str = str_tm;
+				continue;
 			case 0x16: // Ctrl+V
 				str[size - 1] = '\n';
 				break;

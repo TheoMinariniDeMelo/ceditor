@@ -54,7 +54,7 @@ void put_string(char* str, size_t size){
 		}
 		printf("%s", arr);
 		str_position += arr-p+1;
-		puts("");
+		fflush(stdout);
 	}	
 
 	set_background();
@@ -69,5 +69,6 @@ void resize_handler(int sig){
 		printf("You must resize your terminal!");
 		exit(0);
 	}
+
 	set_background();	
 }
