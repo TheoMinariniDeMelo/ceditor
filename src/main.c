@@ -7,12 +7,6 @@
 #include "./terminal.h"
 #include "./terminal_config.h"
 
-void str_copy(char* dest, char* src, size_t size) {
-	for (size_t i = 0; i < size; i++) {
-		dest[i] = src[i];
-	}
-}
-
 void control(char ch) {
 	if (ch == 'q') {
 		exit(0);
