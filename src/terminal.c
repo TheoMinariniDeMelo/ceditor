@@ -4,15 +4,21 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <termios.h>
-#include "terminal_config.c"
 
 
 #define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 #define clear() system("clear");
 
-unsigned int max_line;
-unsigned int max_col;
+unsigned short max_line;
+unsigned short max_col;
+
+unsigned short get_max_line(){
+	return max_line;	
+}
+
+unsigned short get_max_col(){
+	return max_col;	
+}
 
 void set_background()
 {
@@ -59,7 +65,7 @@ void resize_handler(int sig){
 	}
 	max_line = ws.ws_row; 
 	max_col = ws.ws_col; 
-	if(max_col < 50 ^ max_line < 40){
+	if(max_col < 50 && max_line < 40){
 		printf("You must resize your terminal!");
 		exit(0);
 	}

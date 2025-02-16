@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <string.h>
 int get_buffer(FILE* file, char* buff, unsigned int buff_size, int absolute_position){
 	fseek(file, absolute_position, SEEK_SET);
 	fread(buff, 1, buff_size, file);
@@ -11,9 +11,6 @@ int get_buffer(FILE* file, char* buff, unsigned int buff_size, int absolute_posi
  * SEEK_CUR: POSIÇÃO ATUAL DO CURSOR
  * SEEK_END: POSIÇÃO FINAL DO CURSOR
  * */
-#include <stdio.h>
-#include <string.h>
-
 int save_buffer(FILE* file, char* buff, unsigned int buff_size, int absolute_position) {
     long position = ftell(file);
     if (position == -1) {
