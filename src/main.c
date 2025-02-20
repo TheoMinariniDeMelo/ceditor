@@ -57,8 +57,9 @@ int main() {
 				print_mode(control_mode);
 				continue;
 			case 0x08:
+				----------
 				if(size == 1) continue;
-				str[size - 1] = '\0';
+				str[size - 2] = '\0';
 				char *str_tm = realloc(str, size + 1);
 				if(!str_tm){
 					perror("realloc");
