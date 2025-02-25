@@ -9,9 +9,8 @@ void disable_raw_mode() {
 	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &original_terminal) == -1) {
 		perror("tcsetattr");
 	}
-}
-void clean(){
 	clear();
+	fflush(stdout);
 }
 void clear_sig(int i){
 	clear();
@@ -41,10 +40,6 @@ void atexit_config(){
 	// Registra a função de restauração ao sair do programa
 	if (atexit(disable_raw_mode) != 0) {
 		perror("atexit disable raw mode function");
-		exit(1);
-	}
-	if(atexit(clean) != 0){
-		perror("atexit clean function");
 		exit(1);
 	}
 }

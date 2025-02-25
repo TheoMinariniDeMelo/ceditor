@@ -32,7 +32,7 @@ int main() {
 	char c;
 	size_t size = 1;
 
-	char *str = malloc(size + 1); // +1 para '\0'
+	char *str = malloc(size); // +1 para '\0'
 	if (!str) {
 		perror("malloc");
 		exit(1);
@@ -42,34 +42,25 @@ int main() {
 	bool control_mode = false;
 
 	while (read(STDIN_FILENO, &c, 1) == 1) {
-		if(c != 0x08){
-			char* str_tmp = realloc(str, size + 2); // +2 para novo char e '\0'
-			if (!str_tmp) {
-				perror("realloc");
-				free(str);
-				exit(1);
-			}
-			str = str_tmp;
-		}
 		switch(c) {
 			case 0x1B: // Tecla ESC alterna o modo
 				control_mode = !control_mode;
 				print_mode(control_mode);
-				continue;
-			case 0x08:
-				----------
-				if(size == 1) continue;
-				str[size - 2] = '\0';
-				char *str_tm = realloc(str, size + 1);
-				if(!str_tm){
+				break;
+			case 0x7F: // backspace
+				if (size <= 1) break; // Não faz nada se a string estiver vazia
+				size--; // Reduz o tamanho
+				char *str_tmp_b = realloc(str, size); // Redimensiona para o novo tamanho
+				if (!str_tmp_b) {
 					perror("realloc");
 					free(str);
 					exit(1);
 				}
-				str = str_tm;
-				continue;
+				str = str_tmp_b;
+				str[size - 1] = '\0'; // Coloca o terminador no novo final
+				break;
 			case 0x16: // Ctrl+V
-				str[size - 1] = '\n';
+				str[size] = '\n';
 				break;
 			default:
 				if (control_mode) {
@@ -77,12 +68,20 @@ int main() {
 					print_mode(control_mode);
 					continue;
 				}
+				char* str_tmp = realloc(str, size + 1); // +2 para novo char e '\0'
+				if (!str_tmp) {
+					perror("realloc");
+					free(str);
+					exit(1);
+				}
+				str = str_tmp;
+
 				str[size - 1] = c;
+				str[size] = '\0';
+				size++;
 				break;
 		}
 
-		str[size] = '\0';
-		size++;
 
 		system("clear");
 		printf("%s", str);
