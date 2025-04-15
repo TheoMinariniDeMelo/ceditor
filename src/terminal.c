@@ -5,8 +5,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-
-#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+#define gotoxy(x,y) printf("\033[%d;%dH", (x), (y))
 #define clear() system("clear");
 
 unsigned short max_line;
@@ -23,18 +22,14 @@ unsigned short get_max_col(){
 void set_background()
 {
 	clear();
-	printf("\033[s");
+	gotoxy(1,1);
 	printf("\033[45m");
 	for(int i = 0; i < max_line; i++){
 		for(int i = 0; i < max_col; i++){
 			printf(" ");
 		}
 	}
-	printf("\033[u");
-}
-void init(){
-	set_background();
-	printf("\033[H");
+	gotoxy(1,1);	
 }
 void get_position(){
 	printf("\033[6n");

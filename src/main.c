@@ -14,7 +14,7 @@ void control(char ch) {
 
 void print_mode(bool is_edit_mode) {
 	printf("\033[s");                  // Salva a posição do cursor
-	gotoxy(get_max_line(),1); // Move para a última linha
+	gotoxy(get_max_line(), 1);	// Move para a última linha
 	printf("\033[K");                  // Limpa a linha antes de escrever
 	printf(is_edit_mode ? "Edit Mode" : "Control Mode");
 	printf("\033[u");            // Restaura a posição original do cursor
@@ -45,7 +45,7 @@ void remove_chars(unsigned char **str, size_t *size, int n) {
 }
 
 int utf8_char_bytes(unsigned char *str, size_t size) {
-    if (size <= 1) return 0;
+    if (size < 1) return 0;
 
     int bytes = 1;
     size_t pos = size - 2;
@@ -69,6 +69,8 @@ int main() {
 	enable_raw_mode();
 	atexit_config();
 	system("clear");
+	
+	print_mode(1);
 
 	unsigned char c;
 	size_t size = 1;
@@ -80,26 +82,24 @@ int main() {
 	}
 	str[0] = '\0'; // Inicializa string vazia
 
-	bool control_mode = false;
+	bool is_edit_mode = true;
 
 	while (read(STDIN_FILENO, &c, 1) == 1) {
 		switch(c) {
 			case 0x1B: // Tecla ESC alterna o modo
-				control_mode = !control_mode;
-				print_mode(control_mode);
+				is_edit_mode = !is_edit_mode;
+				print_mode(is_edit_mode);
 				break;
 			case 0x7F: // backspace
 				if (size <= 1) break; // Não faz nada se a string estiver vazia
 				int n = utf8_char_bytes(str, size);
 				remove_chars(&str, &size, n);
 				break;
-			case 0x16: // Ctrl+V
-				str[size] = '\n';
-				break;
+
 			default:
-				if (control_mode) {
+				if (!is_edit_mode) {
 					control(c);
-					print_mode(control_mode);
+					print_mode(is_edit_mode);
 					continue;
 				}
 				unsigned char* str_tmp = realloc(str, size + 1); // +2 para novo char e '\0'
@@ -116,10 +116,9 @@ int main() {
 				break;
 		}
 
-
-		system("clear");
+		set_background();
 		printf("%s", str);
-		print_mode(control_mode); // Exibe o modo depois de limpar a tela
+		print_mode(is_edit_mode); // Exibe o modo depois de limpar a tela
 		fflush(stdout);
 	}
 
