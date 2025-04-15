@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <termios.h>
 
-#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
+#define gotoxy(y,x) printf("\033[%d;%dH", (y), (x))
 #define clear() system("clear");
 
 

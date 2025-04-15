@@ -23,12 +23,14 @@ unsigned short get_max_col(){
 void set_background()
 {
 	clear();
+	printf("\033[s");
 	printf("\033[45m");
 	for(int i = 0; i < max_line; i++){
 		for(int i = 0; i < max_col; i++){
 			printf(" ");
 		}
 	}
+	printf("\033[u");
 }
 void init(){
 	set_background();
