@@ -11,6 +11,11 @@
 unsigned short max_line;
 unsigned short max_col;
 
+typedef struct{
+	int row;
+	int col;
+} Cursor;
+
 unsigned short get_max_line(){
 	return max_line;	
 }
@@ -31,9 +36,24 @@ void set_background()
 	}
 	gotoxy(1,1);	
 }
-void get_position(){
-	printf("\033[6n");
-	fflush(stdout);
+Cursor get_cursor(){
+	clear();
+	write(STDOUT_FILENO, "\033[6n", 4);	
+	char response[32];
+	char ch;
+	Cursor cursor = {};
+	int i = 0;
+
+	while (i < sizeof(response) - 1) {
+		if (read(STDIN_FILENO, &ch, 1) != 1) break;
+		response[i++] = ch;
+		if (ch == 'R') break;
+	}
+	response[i] = '\0';
+	if (sscanf(response, "\033[%d;%dR", &(cursor.row), &(cursor.col)) != 2) {
+		cursor.row = cursor.col = -1; 
+	}
+	return cursor;
 }
 void print_char(char ch, int pX, int pY){
 	set_background();
@@ -49,9 +69,9 @@ void put_string(char* str, size_t size){
 		if(p != NULL){
 			memcpy(arr, &str[str_position], arr-p-1);
 		}
-		printf("%s", arr);
+
+		write(STDOUT_FILENO, arr, strlen(str));
 		str_position += arr-p+1;
-		fflush(stdout);
 	}	
 
 	set_background();
