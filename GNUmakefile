@@ -21,5 +21,6 @@ $(OBJ_DIR)/%.o: %.c
 #$< pega a primeira dependencia, $@ pega o target
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
-
+debugger:
+	$(CC) $(CFLAGS) -g $(OBJS) -o d-$(TARGET)
 .PHONY: all clean

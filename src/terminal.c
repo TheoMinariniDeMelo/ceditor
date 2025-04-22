@@ -28,7 +28,7 @@ void set_background()
 {
 	clear();
 	gotoxy(1,1);
-	printf("\033[45m");
+	//printf("\033[45m");
 	for(int i = 0; i < max_line; i++){
 		for(int i = 0; i < max_col; i++){
 			printf(" ");
@@ -36,9 +36,9 @@ void set_background()
 	}
 	gotoxy(1,1);	
 }
-Cursor get_cursor(){
-	clear();
-	write(STDOUT_FILENO, "\033[6n", 4);	
+Cursor get_cursor() {
+	write(STDOUT_FILENO, "\033[6n", 4);  // Solicita posição do cursor
+	fflush(stdout);
 	char response[32];
 	char ch;
 	Cursor cursor = {};
@@ -50,11 +50,14 @@ Cursor get_cursor(){
 		if (ch == 'R') break;
 	}
 	response[i] = '\0';
+
 	if (sscanf(response, "\033[%d;%dR", &(cursor.row), &(cursor.col)) != 2) {
-		cursor.row = cursor.col = -1; 
+		cursor.row = cursor.col = -1;
 	}
+
 	return cursor;
 }
+
 void print_char(char ch, int pX, int pY){
 	set_background();
 	gotoxy(pX, pY);
