@@ -1,3 +1,5 @@
+#include <complex.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,35 +32,30 @@ int utf8_byte_count(unsigned char byte) {
 	fprintf(stderr, "Invalid UTF-8 byte.\n");
 	exit(1);
 }
+int next_mutiple_of_eight(int currenty_col){
+	if(currenty_col == 0) return 8;
+	return floor(((double)currenty_col)/8);
+}
+
 int find_byte_index_by_element(int element_index, unsigned char* str, int size) {
 	int byte_index = 0;
 	int element_count = 0;
 
-	FILE* file = fopen("./ceditor.log", "a+");
-	if (!file) {
-		perror("fopen");
-		exit(1);
-	}
-
-	fprintf(file, "ELEMENT INDEX: %d\n", element_index);
-	fclose(file);
 	int currenty_col = 0;
 	while (byte_index < size) {
-		if (element_count == element_index) 
-		{
-			FILE* file = fopen("./ceditor.log", "a+");
-			if (!file) {
-				perror("fopen");
-				exit(1);
-			}
-			fprintf(file, "\n\nELEMENT INDEX REAL: %d\n\n", byte_index);
-			fclose(file);
-			return byte_index - 1;
-		}
-		if(str[byte_index] == '\n'){
+		if (element_count == element_index) return byte_index - 1;
+		else if(str[byte_index] == '\n'){
 			byte_index++;
 			element_count += get_max_col() - currenty_col;
 			currenty_col = 0;
+			continue;
+		}
+		else if(str[byte_index] == '\t'){
+			byte_index++;
+			int m = next_mutiple_of_eight(currenty_col);
+			element_count += m;
+			if ((get_max_col() - currenty_col) > m) currenty_col += m;
+			else currenty_col = m - (get_max_col() - currenty_col);
 			continue;
 		}
 		else{
@@ -109,27 +106,19 @@ void remove_utf8_chars(unsigned char **str, size_t *size, int n, int end_index) 
 		}
 	}
 
-	FILE *file = fopen("./ceditor.log", "a+");
-	if (!file) {
-		perror("fopen");
-		exit(1);
-	}
-
-	fprintf(file, "\n=== REMOVING UTF8 CHARS: UTF-8 (%d) end-index (%d) ===\n", n, end_index);
-	fwrite(*str, 1, *size, file);
-	fprintf(file, "\n--- RESULT ---\n");
-	fwrite(temp, 1, new_size, file);
-	fprintf(file, "\n");
-
-	fclose(file);
-
 	free(*str);
 	*str = temp;
 	*size = new_size;
 }
 
 // ========== LOOP PRINCIPAL ==========
+void update(unsigned char *str, bool is_edit_mode){
+	set_background();
+	printf("%s", str);
+	display_mode(is_edit_mode);
+	fflush(stdout);
 
+}
 int main() {
 	// Inicialização
 	resize_handler(0);
@@ -140,7 +129,6 @@ int main() {
 	system("clear");
 	bool is_edit_mode = true;
 	display_mode(is_edit_mode);
-	int a = 0;
 	size_t size = 1;
 	unsigned char *str = malloc(size);
 	if (!str) {
@@ -149,25 +137,42 @@ int main() {
 	}
 	str[0] = '\0';
 	unsigned char c;
-	while (read(STDIN_FILENO, &c, 1) == 1) {
-	//	if (a==40) break;
-	//	a++;
+	while (1/*read(STDIN_FILENO, &c, 1) == 1*/) {
+		c = getchar();
 		switch (c) {
 			case 0x1B:  // ESC: alternar modo
-				is_edit_mode = !is_edit_mode;
-				display_mode(is_edit_mode);
+				if(getchar() == '['){
+					Cursor cursor = get_cursor();
+					switch(getchar()){
+						case 'A': 
+							gotoxy(cursor.row - 1, cursor.col);
+							break;
+						case 'B':
+							gotoxy(cursor.row + 1, cursor.col);
+							break;
+						case 'C':
+							gotoxy(cursor.row, cursor.col + 1);
+							break;
+						case 'D':
+							gotoxy(cursor.row, cursor.col - 1);
+							break;
+					}
+
+				}else{
+					is_edit_mode = !is_edit_mode;
+					display_mode(is_edit_mode);
+					update(str, is_edit_mode);
+				}
 				break;
 			case 0x7F:  // Backspace
 				if (size <= 1) break;
-				FILE *file = fopen("./ceditor.log", "a+");
 				Cursor cursor = get_cursor();
 				int logical_index = (cursor.row - 1) * get_max_col() + cursor.col - 1;
 				int byte_index = find_byte_index_by_element(logical_index, str, size);
-				fprintf(file,"\n\nLOGICAL INDEX: %d AND COL_MAX: %d\n\n", logical_index, get_max_col());
 				if (byte_index == -1) break;
 				int n_bytes = get_char_byte_size(byte_index, str, size);
 				remove_utf8_chars(&str, &size, n_bytes, byte_index);
-				fclose(file);
+				update(str, is_edit_mode);
 				break;
 			default:
 				if (!is_edit_mode) {
@@ -187,32 +192,11 @@ int main() {
 				str[size - 1] = c;
 				str[size] = '\0';
 				size++;
-
+				update(str, is_edit_mode);
 				break;
 		}
-		set_background();
-		printf("%s", str);
-		display_mode(is_edit_mode);
-		fflush(stdout);
 	}
 
-	FILE *file = fopen("./ceditor.log", "a+");
-	fprintf(file, "\n\n\n\n");
-	for(int i = 0; i < size; i++){
-		/*switch(str[i]){
-			case '\n':
-				fprintf(file ,"\033[0;32m'\\n'\033[0m\n");
-				break;
-			case '\0':
-				fprintf(file,"\033[0;31m'\\0'\033[0m");
-				break;	
-			default:
-				fprintf(file,"%c", str[i]);
-		}*/
-		fprintf(file,"%c", str[i]);
-	}
-	fprintf(file,"\n\n\n\rsize: %d", (int )size);
-	fclose(file);
 	free(str);
 	return 0;
 }
