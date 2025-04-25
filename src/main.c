@@ -33,8 +33,7 @@ int utf8_byte_count(unsigned char byte) {
 	exit(1);
 }
 int next_mutiple_of_eight(int currenty_col){
-	if(currenty_col == 0) return 8;
-	return floor(((double)currenty_col)/8);
+	return (floor(((double)currenty_col)/8) + 1)*8;
 }
 
 int find_byte_index_by_element(int element_index, unsigned char* str, int size) {
@@ -42,24 +41,33 @@ int find_byte_index_by_element(int element_index, unsigned char* str, int size) 
 	int element_count = 0;
 
 	int currenty_col = 0;
+
 	while (byte_index < size) {
+		int max_col = get_max_col();
 		if (element_count == element_index) return byte_index - 1;
 		else if(str[byte_index] == '\n'){
 			byte_index++;
-			element_count += get_max_col() - currenty_col;
+			element_count += max_col - currenty_col;
 			currenty_col = 0;
 			continue;
 		}
 		else if(str[byte_index] == '\t'){
 			byte_index++;
 			int m = next_mutiple_of_eight(currenty_col);
-			element_count += m;
-			if ((get_max_col() - currenty_col) > m) currenty_col += m;
-			else currenty_col = m - (get_max_col() - currenty_col);
+			if(currenty_col == max_col){
+				currenty_col = m - max_col;
+				element_count += currenty_col;
+			}else if(currenty_col < max_col && (m - element_count) > max_col){
+				currenty_col = m - element_count;
+				element_count += currenty_col;
+			}else if(currenty_col < max_col && (m - element_count) < max_col){
+				currenty_col = m - element_count + currenty_col;
+				element_count += m - element_count;
+			}
 			continue;
 		}
 		else{
-			currenty_col = currenty_col < get_max_col() ? currenty_col + 1: 1; 
+			currenty_col = currenty_col < max_col ? currenty_col + 1: 1; 
 			byte_index += utf8_byte_count(str[byte_index]);
 			element_count++;
 		}
@@ -111,7 +119,6 @@ void remove_utf8_chars(unsigned char **str, size_t *size, int n, int end_index) 
 	*size = new_size;
 }
 
-// ========== LOOP PRINCIPAL ==========
 void update(unsigned char *str, bool is_edit_mode){
 	set_background();
 	printf("%s", str);
@@ -120,13 +127,11 @@ void update(unsigned char *str, bool is_edit_mode){
 
 }
 int main() {
-	// Inicialização
 	resize_handler(0);
 	signal(SIGWINCH, resize_handler);
 	signal(SIGINT, clear_sig);
 	enable_raw_mode();
 	atexit_config();
-	system("clear");
 	bool is_edit_mode = true;
 	display_mode(is_edit_mode);
 	size_t size = 1;
@@ -137,7 +142,7 @@ int main() {
 	}
 	str[0] = '\0';
 	unsigned char c;
-	while (1/*read(STDIN_FILENO, &c, 1) == 1*/) {
+	while (1){
 		c = getchar();
 		switch (c) {
 			case 0x1B:  // ESC: alternar modo
