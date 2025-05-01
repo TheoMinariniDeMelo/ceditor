@@ -1,5 +1,4 @@
 #include <complex.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +6,6 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include "./terminal_config.h"
-
-// ========== UTILITÁRIOS ==========
 
 void handle_control_mode_input(char ch) {
 	if (ch == 'q') exit(0);
@@ -32,50 +29,64 @@ int utf8_byte_count(unsigned char byte) {
 	fprintf(stderr, "Invalid UTF-8 byte.\n");
 	exit(1);
 }
-int next_mutiple_of_eight(int currenty_col){
-	return (floor(((double)currenty_col)/8) + 1)*8;
+int next_tab_stop(int col) {
+	const int tab_width = 8;
+	return col + (tab_width - ((col - 1) % tab_width));
 }
-
-int find_byte_index_by_element(int element_index, unsigned char* str, int size) {
+int find_byte_index_by_element(int target_index, unsigned char* str, int size) {
 	int byte_index = 0;
-	int element_count = 0;
-
-	int currenty_col = 0;
+	int element_index = 1;
+	int col = 1;
 
 	while (byte_index < size) {
-		int max_col = get_max_col();
-		if (element_count == element_index) return byte_index - 1;
-		else if(str[byte_index] == '\n'){
+		if (element_index == target_index) {
+			return byte_index - 1;
+		}
+
+		unsigned char ch = str[byte_index];
+
+		if (ch == '\n') {
+			int max_col = get_max_col();
+			element_index += max_col - col + 1;
+			col = 1;
 			byte_index++;
-			element_count += max_col - currenty_col;
-			currenty_col = 0;
 			continue;
 		}
-		else if(str[byte_index] == '\t'){
-			byte_index++;
-			int m = next_mutiple_of_eight(currenty_col);
-			if(currenty_col == max_col){
-				currenty_col = m - max_col;
-				element_count += currenty_col;
-			}else if(currenty_col < max_col && (m - element_count) > max_col){
-				currenty_col = m - element_count;
-				element_count += currenty_col;
-			}else if(currenty_col < max_col && (m - element_count) < max_col){
-				currenty_col = m - element_count + currenty_col;
-				element_count += m - element_count;
+
+		if (ch == '\t') {
+			int max_col = get_max_col();
+			int new_col = next_tab_stop(col);
+
+			if (new_col > max_col) {
+				new_col = max_col;
 			}
+
+			// Logging auxiliar
+			FILE *file = fopen("./ceditor.log", "a+");
+			if (file) {
+				fprintf(file, "[TAB] col=%d → new_col=%d | element_index=%d, byte_index=%d, target=%d\n",
+				        col, new_col, element_index, byte_index, target_index);
+				fclose(file);
+			}
+
+			element_index += new_col - col ;
+			col = new_col % max_col;
+			if (col == 0) col = max_col;
+
+			byte_index++;
 			continue;
 		}
-		else{
-			currenty_col = currenty_col < max_col ? currenty_col + 1: 1; 
-			byte_index += utf8_byte_count(str[byte_index]);
-			element_count++;
-		}
+
+		// UTF-8 character
+		int char_len = utf8_byte_count(ch);
+		byte_index += char_len;
+
+		col = (col < get_max_col()) ? col + 1 : 1;
+		element_index++;
 	}
 
 	return -1;
 }
-
 int get_char_byte_size(int byte_index, unsigned char *str, size_t size) {
 	if (size < 1) return 0;
 
@@ -172,7 +183,7 @@ int main() {
 			case 0x7F:  // Backspace
 				if (size <= 1) break;
 				Cursor cursor = get_cursor();
-				int logical_index = (cursor.row - 1) * get_max_col() + cursor.col - 1;
+				int logical_index = (cursor.row - 1) * get_max_col() + cursor.col;
 				int byte_index = find_byte_index_by_element(logical_index, str, size);
 				if (byte_index == -1) break;
 				int n_bytes = get_char_byte_size(byte_index, str, size);
