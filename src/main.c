@@ -1,14 +1,21 @@
-#include <complex.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "file.c"
 #include "./terminal_config.h"
 
-void handle_control_mode_input(char ch) {
+void handle_control_mode_input(char ch, FILE* file, char* str, size_t size) {
 	if (ch == 'q') exit(0);
+	switch(ch){
+		case 'q':
+			exit(0);
+		case ':':
+			
+	}	
 }
 
 void display_mode(bool is_edit_mode) {
@@ -137,7 +144,7 @@ void update(unsigned char *str, bool is_edit_mode){
 	fflush(stdout);
 
 }
-int main() {
+int main(int argc, char *argv[]) {
 	resize_handler(0);
 	signal(SIGWINCH, resize_handler);
 	signal(SIGINT, clear_sig);
@@ -145,13 +152,20 @@ int main() {
 	atexit_config();
 	bool is_edit_mode = true;
 	display_mode(is_edit_mode);
-	size_t size = 1;
+	char *file_path;
+	if(argc > 1){
+		file_path = argv[1];
+	}
+	FILE* file = create(file_path);
+	size_t size = get_file_size(file);
+
 	unsigned char *str = malloc(size);
 	if (!str) {
 		perror("malloc");
 		exit(1);
 	}
-	str[0] = '\0';
+	
+	str[size - 1] = '\0';
 	unsigned char c;
 	while (1){
 		c = getchar();
@@ -192,7 +206,7 @@ int main() {
 				break;
 			default:
 				if (!is_edit_mode) {
-					handle_control_mode_input(c);
+					handle_control_mode_input(c, file, str, size);
 					display_mode(is_edit_mode);
 					continue;
 				}
