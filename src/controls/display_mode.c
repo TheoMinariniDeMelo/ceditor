@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include "../terminal_config.h"
 
 void display_mode(bool is_edit_mode, char* str) {
@@ -8,7 +9,7 @@ void display_mode(bool is_edit_mode, char* str) {
 	gotoxy(get_max_line(), 1);            // Vai para última linha
 
 	printf("\033[K");                     // Limpa linha
-	if(!is_edit_mode && str != NULL){
+	if(!is_edit_mode && strlen(str) > 1){
 		printf("%s", str);
 	}
 	else{

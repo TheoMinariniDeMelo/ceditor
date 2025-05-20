@@ -8,6 +8,8 @@
 #include "file.c"
 #include "./controls/handle_control_mode.c"
 #include "./controls/display_mode.c"
+
+
 int utf8_byte_count(char byte) {
 	if (byte <= 0x7F) return 1;
 	if ((byte & 0xE0) == 0xC0) return 2;
@@ -101,7 +103,7 @@ int count_utf8_chars(char *str, int size) {
 void remove_utf8_chars(char **str, size_t *size, int n, int end_index) {
 	int start = end_index - n + 1;
 	size_t new_size = *size - n;
-	char *temp = calloc(new_size, sizeof(unsigned char));
+	char *temp = calloc(new_size, sizeof(char));
 	if (!temp) {
 		perror("calloc");
 		exit(1);
@@ -118,7 +120,7 @@ void remove_utf8_chars(char **str, size_t *size, int n, int end_index) {
 	*size = new_size;
 }
 
-void update(char *str, bool is_edit_mode, unsigned char* text_control_mode){
+void update(char *str, bool is_edit_mode, char* text_control_mode){
 	set_background();
 	printf("%s", str);
 	display_mode(is_edit_mode, text_control_mode);
@@ -133,13 +135,16 @@ int main(int argc, char *argv[]) {
 	atexit_config();
 	bool is_edit_mode = true;
 	display_mode(is_edit_mode, (char*) "");
-	char *file_path;
+	
+	/*char *file_path;
 	if(argc > 1){
 		file_path = argv[1];
 	}
 	FILE* file = create(file_path);
 	size_t size = get_file_size(file);
-
+		*/
+	FILE *file = NULL;
+	size_t size = 1;
 	char *str = malloc(size);
 	if (!str) {
 		perror("malloc");
@@ -148,7 +153,7 @@ int main(int argc, char *argv[]) {
 
 	str[size - 1] = '\0';
 	char c;
-	char* text_control_mode = NULL;
+	char* text_control_mode = (char*) malloc(sizeof(char));
 	size_t text_control_mode_size = 0;
 	while (1){
 		c = getchar();
@@ -190,26 +195,35 @@ int main(int argc, char *argv[]) {
 				update(str, is_edit_mode, text_control_mode);
 				break;
 			default:
-				if (!is_edit_mode && c == 0x0A) {
+				if (!is_edit_mode && c == 0x0A) { // 0x0A == ENTER
 					handle_control_mode_input(text_control_mode, text_control_mode_size, file, str, size);
-					//display_mode(is_edit_mode, text_control_mode);
+					display_mode(is_edit_mode, text_control_mode);
 					continue;
 				}
-				else if(!is_edit_mode){
-
+				else if(!is_edit_mode && c != 0x7F){
+					char *text_control_mode_tmp = realloc(text_control_mode, text_control_mode_size + 1);
+					if(!text_control_mode_tmp){
+						perror("realloc text control mode");
+						exit(1);
+					}
+					text_control_mode = text_control_mode_tmp;
+					text_control_mode[text_control_mode_size - 1] = c;
+					text_control_mode[text_control_mode_size] = '\0';
+					text_control_mode_size++;
 				}
-				char *tmp = realloc(str, size + 1);
-				if (!tmp) {
-					perror("realloc");
-					free(str);
-					exit(1);
-				}
-				str = tmp;
+				else{
+					char *tmp = realloc(str, size + 1);
+					if (!tmp) {
+						perror("realloc");
+						exit(1);
+					}
+					str = tmp;
 
-				str[size - 1] = c;
-				str[size] = '\0';
-				size++;
-				update(str, is_edit_mode);
+					str[size - 1] = c;
+					str[size] = '\0';
+					size++;
+				}
+				update(str, is_edit_mode, text_control_mode);
 				break;
 		}
 	}
